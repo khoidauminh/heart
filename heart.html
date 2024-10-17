@@ -1,0 +1,331 @@
+<!doctype html>
+<html>
+<head></head>
+
+<body>
+
+<style>
+body {
+    background-image: linear-gradient(to right, rgba(50, 5, 30, 100), rgba(10, 0, 40, 100));
+}
+
+.center {
+  width: 20%;
+  position: absolute;
+  top: 50%;
+  left: 51%;
+  
+  transform: translate(-50%, -50%);
+  
+  animation: intro 1s;
+  
+
+  animation-name 
+  
+  z-index: 100;
+}
+
+@keyframes intro {
+    from {
+        width: 0%;
+        opacity: 0;
+    }
+    to {
+        width: 20%;
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    20% {
+        top: 51%;
+        left: 52%;
+    }
+    
+    40% {
+        top: 49%;
+        left: 50%;        
+    }
+    
+    60% {
+        top: 52%;
+        left: 48%;
+    }
+    
+    80% {
+        top: 48%;
+        left: 50%;
+    }
+}
+
+</style>
+
+<img src='koffeexrosie1.png' class="center">
+	
+<script>
+
+const freeze = function(ms){ return new Promise(res => setTimeout(res, ms)); };
+const num_of_hearts = 100;
+const num_of_sparks = 50;
+
+const wh = window.innerWidth / 2;
+const hh = window.innerHeight / 2;
+const sz = Math.min(wh, hh);
+const heart_scale = 0.045 * sz;
+
+console.log(wh, ' ', hh);
+
+function heart_path(t, scale) {
+    var tsin = Math.sin(t);
+    var tcos = Math.cos(t);
+
+    return [
+        16.0*Math.pow(tsin, 3.0)*scale,
+        -(
+            13.0*tcos -
+            5.0 *Math.cos(2.0*t) -
+            2.0 *Math.cos(3.0*t) -
+                 Math.cos(4.0*t)
+        )*scale
+    ];
+}
+
+function squish(t) {
+    return (-1.0 / (t+1.0)) + 1.0;
+}
+
+class Heart {
+    constructor(t) {
+        //let i = Math.random()*10.0;
+        let i = t *10.0;
+
+        let [x, y] = heart_path(i, heart_scale);
+    
+        this.heart = new Image();
+        this.tick = -t;
+        this.x = x;
+        this.y = y;
+        this.scale = 0.13*sz;
+        
+        this.speed = 0.1;
+        this.shake_speed = 0.1 + Math.random() % 0.5;
+        this.shake_intensity = (0.7 + Math.random() % 1.0)*heart_scale*0.7;
+        this.phase_offset = Math.random() % 0.5;
+        this.opening_animation_length = 10.0;
+        this.lifetime = 100.0;
+        this.closing_animation_length = 10.0;
+        
+        this.beat_tick = Math.floor(Math.random()*10.0);
+        this.beat_duration = 3.0;
+        this.beat_interval = 7.0;
+        this.beat_intensity = 0.4;
+       
+        this.heart.src = "heart_grad.png";
+        this.heart.style.position = "fixed";
+        this.heart.style.top = wh + "px";
+        this.heart.style.left = hh + "px";
+        this.heart.style.width = this.scale + "px";
+        this.heart.style.height = this.scale + "px"; 
+        this.heart.style.opacity = "0.0";
+        this.heart.style.zIndex = 0;
+        this.heart.style["offset-anchor"] = "center";
+    }
+    
+    advance() {
+        this.tick += 1;
+        this.beat_tick += 1;
+        
+        this.beat_tick %= 7000;
+        // let t = this.lifetime * this.speed;
+       
+    }
+    
+    reset() {
+        // this.heart.style.opacity = "1.0";
+        this.tick = 1;
+        
+        let i = Math.random()*Math.PI*2.0;
+        // let [x, y] = heart_path(i, heart_scale);
+        
+        // this.x = x;
+        // this.y = y;
+    }
+       
+    update() {
+        if (this.tick < 1) { return; }
+        
+        let t = this.tick * this.speed;
+        let ts = squish(t);
+    
+        var x = this.x*ts;
+        var y = this.y*ts;
+        
+        var w = this.scale;
+        var h = this.scale;
+                
+        let beat = (this.beat_tick * this.speed) % this.beat_interval;
+        
+        if (beat < this.beat_duration) {
+            let bt = beat / this.beat_duration;
+            
+            //let scale_factor = (1.0 + (1.0 - Math.abs(2.0*bt - 1.0))*this.beat_intensity);
+            
+            let scale_factor = 1.0 + Math.pow(Math.sin(Math.PI*bt), 3.0)*this.beat_intensity;
+            
+            w *= scale_factor;
+            h *= scale_factor;
+            
+            this.heart.style.width = w + 'px';
+            this.heart.style.height = h + 'px';
+        }
+        
+        this.heart.style.left = wh + x - w/2.0 + Math.cos(t*this.shake_speed)*this.shake_intensity*ts + 'px';
+        this.heart.style.top = hh + y - h/2.0 +  Math.sin(0.71454343*t*this.shake_speed)*this.shake_intensity*ts + 'px';
+        
+        if (t > this.lifetime) {
+            let te = t - this.lifetime;
+            
+            if (te > this.closing_animation_length) {
+                this.reset();
+                
+                return;
+            }
+            
+            //console.log(t);
+            
+            this.heart.style.opacity = "" + (1.0001-(te / this.closing_animation_length));
+            return;
+        }
+        
+        this.heart.style.opacity = "" + (Math.min(t / this.opening_animation_length, 1.0) + (Math.cos(t / this.lifetime * Math.PI*2.0)-1.0)*0.2);
+       
+        /*
+        if (t < this.opening_animation_length) {
+            // let ratio = t / this.opening_animation_length;
+            x = 0.0 + this.x
+            y = 0.0 + this.y
+        }*/
+   
+    }
+}
+
+class Glitter {
+    constructor() {
+        this.spark_interval = 0.0;
+        this.speed = 0.2;
+        this.lifetime = 10.0;
+        this.tick = -50;
+        
+        let [x, y] = heart_path(this.tick*Math.random(), heart_scale);
+        
+        this.x = x;
+        this.y = y;
+        
+        this.wiggle_speed = Math.random() * 0.2;
+        this.wiggle_intensity = 10.0;
+        
+        this.sparkle_speed = 0.1 + Math.random()*0.3;
+        this.sparkle_intensity = 1.0;
+        
+        this.wiggle_pattern = (Math.random()-0.5)*Math.PI;
+        
+        this.img = new Image();
+        this.img.src = 'sparkle.png';
+        this.img.style.position = 'fixed';
+        
+        this.img.style.top = wh + "px";
+        this.img.style.left = hh + "px";
+        
+        this.img.style.width = '10px';
+        this.img.style.height = '10px';
+        
+        this.img.style.zIndex = 1;
+    }
+    
+    advance() {
+        this.tick += 1;
+        this.tick %= 100000;
+    }
+    
+    reset() {
+        this.tick = 0;
+    }
+    
+    update() {
+        if (this.tick < 0) { return; } 
+    
+        let t = this.tick * this.speed;
+        
+        this.img.style.left = wh + this.x + Math.sin(t*this.wiggle_speed)*this.wiggle_intensity + 'px';
+        this.img.style.top  = hh + this.y + Math.cos(this.wiggle_pattern*t*this.wiggle_speed)*this.wiggle_intensity + 'px';
+        
+        this.img.style.opacity = "" + (1.001 - Math.cos(t*this.sparkle_speed));
+    }
+}
+
+async function main() {    
+    
+    // var h = new Heart();
+    
+    var array = [];
+    var array_sparkle = [];
+    
+    for (var i = 0; i < num_of_hearts; i++) {
+        array.push(new Heart(i));
+    }
+    
+    for (var i = 0; i < num_of_sparks; i++) {
+        array_sparkle.push(new Glitter());
+    }
+
+
+    /*
+    img.onload = function() {
+        var img0 = img;
+        for (var i = 0.0; i < 1.0; i += 0.01) {
+            img0.style.left = i*100.0 + "%";
+            document.body.append(img0);
+        }
+    }*/
+
+    array.forEach(function(heart) {
+        document.body.append(heart.heart);
+    });
+    
+    array_sparkle.forEach(function(g) {
+        document.body.append(g.img);
+    });
+    
+    console.log(array);
+    
+    var i = 0.0;
+    while (true) {
+    
+        // [h.x, h.y] = heart_path(i, 1.0);
+        
+        array.forEach(function(heart) {
+            heart.advance();
+            heart.update();
+        });
+        
+        array_sparkle.forEach(function(g) {
+            g.advance();
+            g.update();
+        });
+        
+        // i += 0.1;
+        
+        await freeze(15);
+    }
+
+}
+
+main();
+
+</script>
+
+</body>
+
+
+
+</html>
